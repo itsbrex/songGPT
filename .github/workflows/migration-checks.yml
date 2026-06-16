@@ -1,0 +1,51 @@
+name: Migration Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migration-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cloudflare-migration:
+    name: Cloudflare Migration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: front-end/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: front-end
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: front-end
+
+      - name: Compile Python runtime files
+        run: python3 -m compileall -q back-end/app composer
+
+      - name: Verify Cloudflare migration invariants
+        run: node scripts/check-migration.mjs

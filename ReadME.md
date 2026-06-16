@@ -1,5 +1,7 @@
 # songGPT
 
+[![Migration Checks](https://github.com/soliblue/songGPT/actions/workflows/migration-checks.yml/badge.svg)](https://github.com/soliblue/songGPT/actions/workflows/migration-checks.yml)
+
 songGPT is an open-source project that generates short musical compositions in
 ABC notation, converts them to MIDI, and plays them in the browser. The current
 hosted path is designed to stay on Cloudflare's free tiers: Cloudflare Pages for
