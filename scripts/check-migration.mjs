@@ -186,8 +186,10 @@ function checkRepoInvariants() {
   assertTrackedAndNotIgnored("front-end/src/data/instruments.js");
   assertTrackedAndNotIgnored("scripts/install-composer-service.sh");
   assertTrackedAndNotIgnored("scripts/check-composer-service.sh");
+  assertTrackedAndNotIgnored("scripts/check-decommissioned-services.sh");
   assertExecutable("scripts/install-composer-service.sh");
   assertExecutable("scripts/check-composer-service.sh");
+  assertExecutable("scripts/check-decommissioned-services.sh");
   assert(
     spawnSync("bash", ["-n", "scripts/install-composer-service.sh"], {
       cwd: root,
@@ -201,6 +203,20 @@ function checkRepoInvariants() {
       stdio: "ignore",
     }).status === 0,
     "composer service health check has valid shell syntax",
+  );
+  assert(
+    spawnSync("bash", ["-n", "scripts/check-decommissioned-services.sh"], {
+      cwd: root,
+      stdio: "ignore",
+    }).status === 0,
+    "decommissioned service check has valid shell syntax",
+  );
+  assert(
+    spawnSync("scripts/check-decommissioned-services.sh", {
+      cwd: root,
+      stdio: "ignore",
+    }).status === 0,
+    "Firebase/Expo/provider decommission check passes",
   );
 
   const activeFiles = [

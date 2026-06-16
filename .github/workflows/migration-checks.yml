@@ -47,5 +47,8 @@ jobs:
       - name: Compile Python runtime files
         run: python3 -m compileall -q back-end/app composer
 
+      - name: Verify decommissioned service cleanup
+        run: scripts/check-decommissioned-services.sh
+
       - name: Verify Cloudflare migration invariants
         run: node scripts/check-migration.mjs

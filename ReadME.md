@@ -59,6 +59,17 @@ notation in D1, and the ABC download route falls back to D1 when an R2 object is
 not present. Firebase Storage was not used as a source of truth during the
 migration because it returned billing/availability errors.
 
+The repository also keeps a dedicated decommission check for stale Firebase,
+Expo, provider SDK, and WAV-generation runtime pieces:
+
+```bash
+scripts/check-decommissioned-services.sh
+```
+
+This check is part of CI. It verifies that old Firebase config/build state is
+not tracked and that active runtime files stay on Cloudflare D1/R2 plus the
+local CLI composer path.
+
 ## Cloudflare Setup
 
 Use secrets from your local environment at command time. Do not commit them.
@@ -105,9 +116,10 @@ node scripts/check-migration.mjs
 
 The check verifies the live app/API URLs, the clean `api.songgpt.soli.blue`
 surface, tracked frontend source data, Cloudflare D1/R2 bindings, and active
-runtime files for Firebase/provider/WAV regressions. It also checks three live
-proof songs: one legacy Firestore import, one Codex CLI-generated song, and one
-Claude CLI-generated song. Use `SONGGPT_LEGACY_PROOF_SONG_ID`,
+runtime files for Firebase/provider/WAV regressions. It also runs the
+decommissioned service check and checks three live proof songs: one legacy
+Firestore import, one Codex CLI-generated song, and one Claude CLI-generated
+song. Use `SONGGPT_LEGACY_PROOF_SONG_ID`,
 `SONGGPT_CODEX_PROOF_SONG_ID`, or `SONGGPT_CLAUDE_PROOF_SONG_ID` to override
 those IDs if a proof row is intentionally replaced.
 

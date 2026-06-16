@@ -591,16 +591,21 @@ a {
   display: block;
 }
 
-.abcjs-container text,
-.abcjs-container tspan {
-  stroke: none !important;
-}
-
 .inverse * {
   color: #111827 !important;
   fill: #111827 !important;
   stroke: #111827 !important;
   border-color: #111827 !important;
+}
+
+.abcjs-container text,
+.abcjs-container tspan,
+.inverse .abcjs-container text,
+.inverse .abcjs-container tspan {
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-weight: 400 !important;
+  stroke: none !important;
+  stroke-width: 0 !important;
 }
 
 .abcjs-inline-audio {
