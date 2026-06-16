@@ -49,6 +49,12 @@ logout:
 scripts/install-composer-service.sh --enable-linger --start
 ```
 
+Check the local service without printing secrets or claiming a job:
+
+```bash
+scripts/check-composer-service.sh
+```
+
 The older `composer/songgpt-composer.service.example` remains available for
 system-level installs that intentionally use `/opt/songgpt`.
 

@@ -145,6 +145,12 @@ scripts/install-composer-service.sh --enable-linger --start
 journalctl --user -u songgpt-composer.service -f
 ```
 
+To verify the local composer daemon after deploys or reboots:
+
+```bash
+scripts/check-composer-service.sh
+```
+
 ## Contributing
 
 We welcome contributions to the project. Please see `CONTRIBUTING.md` for more.

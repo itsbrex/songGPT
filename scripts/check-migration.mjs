@@ -185,13 +185,22 @@ function checkRepoInvariants() {
   assertTrackedAndNotIgnored("front-end/src/data/defaultSystemMessage.js");
   assertTrackedAndNotIgnored("front-end/src/data/instruments.js");
   assertTrackedAndNotIgnored("scripts/install-composer-service.sh");
+  assertTrackedAndNotIgnored("scripts/check-composer-service.sh");
   assertExecutable("scripts/install-composer-service.sh");
+  assertExecutable("scripts/check-composer-service.sh");
   assert(
     spawnSync("bash", ["-n", "scripts/install-composer-service.sh"], {
       cwd: root,
       stdio: "ignore",
     }).status === 0,
     "composer service installer has valid shell syntax",
+  );
+  assert(
+    spawnSync("bash", ["-n", "scripts/check-composer-service.sh"], {
+      cwd: root,
+      stdio: "ignore",
+    }).status === 0,
+    "composer service health check has valid shell syntax",
   );
 
   const activeFiles = [
