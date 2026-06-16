@@ -105,7 +105,10 @@ node scripts/check-migration.mjs
 
 The check verifies the live app/API URLs, the clean `api.songgpt.soli.blue`
 surface, tracked frontend source data, Cloudflare D1/R2 bindings, and active
-runtime files for Firebase/provider/WAV regressions.
+runtime files for Firebase/provider/WAV regressions. It also checks two live
+proof songs: one legacy Firestore import and one local CLI-generated song. Use
+`SONGGPT_LEGACY_PROOF_SONG_ID` or `SONGGPT_COMPOSER_PROOF_SONG_ID` to override
+those IDs if either proof row is intentionally replaced.
 
 ## Backups
 

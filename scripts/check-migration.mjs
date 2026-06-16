@@ -10,8 +10,13 @@ const apiBase = (process.env.SONGGPT_API_BASE || "https://api.songgpt.soli.blue"
   /\/$/,
   "",
 );
-const proofSongId =
-  process.env.SONGGPT_PROOF_SONG_ID || "661874d5-52fc-4cd9-8da4-df4a6b0bf68f";
+const legacyProofSongId =
+  process.env.SONGGPT_LEGACY_PROOF_SONG_ID ||
+  process.env.SONGGPT_PROOF_SONG_ID ||
+  "661874d5-52fc-4cd9-8da4-df4a6b0bf68f";
+const composerProofSongId =
+  process.env.SONGGPT_COMPOSER_PROOF_SONG_ID ||
+  "d608ac87-ca27-4ee7-86b7-0aee379cdb1d";
 
 const failures = [];
 const passes = [];
@@ -101,10 +106,23 @@ async function checkLiveUrls() {
   const legacySongs = await fetchJson(`${apiBase}/api/songs/?limit=1`);
   assert(Array.isArray(legacySongs.songs), "compatibility /api/songs still works");
 
-  await checkFile(`${apiBase}/songs/${proofSongId}/files/abc`, "text/vnd.abc");
-  await checkFile(`${apiBase}/songs/${proofSongId}/files/abc`, "text/vnd.abc", "HEAD");
-  await checkFile(`${apiBase}/songs/${proofSongId}/files/mid`, "audio/midi");
-  await checkFile(`${apiBase}/songs/${proofSongId}/files/mid`, "audio/midi", "HEAD");
+  const composerSong = await fetchJson(`${apiBase}/songs/${composerProofSongId}`);
+  assert(composerSong.status === "complete", "local CLI proof song is complete");
+  assert(
+    /local-cli|codex|claude/i.test(composerSong.model || ""),
+    "local CLI proof song exposes a local model",
+  );
+  assert(Boolean(composerSong.abc), "local CLI proof song has ABC notation in D1");
+  assert(Boolean(composerSong.response), "local CLI proof song has composer response text");
+
+  await checkFile(`${apiBase}/songs/${legacyProofSongId}/files/abc`, "text/vnd.abc");
+  await checkFile(`${apiBase}/songs/${legacyProofSongId}/files/abc`, "text/vnd.abc", "HEAD");
+  await checkFile(`${apiBase}/songs/${legacyProofSongId}/files/mid`, "audio/midi");
+  await checkFile(`${apiBase}/songs/${legacyProofSongId}/files/mid`, "audio/midi", "HEAD");
+  await checkFile(`${apiBase}/songs/${composerProofSongId}/files/abc`, "text/vnd.abc");
+  await checkFile(`${apiBase}/songs/${composerProofSongId}/files/abc`, "text/vnd.abc", "HEAD");
+  await checkFile(`${apiBase}/songs/${composerProofSongId}/files/mid`, "audio/midi");
+  await checkFile(`${apiBase}/songs/${composerProofSongId}/files/mid`, "audio/midi", "HEAD");
 
   const appResponse = await fetch(appUrl);
   assert(appResponse.ok, `${appUrl} returned ${appResponse.status}`);
