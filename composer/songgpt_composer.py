@@ -27,11 +27,12 @@ OUTPUT_SCHEMA = {
         },
         "score": {
             "type": "object",
-            "description": "Optional structured quality and musical metadata.",
-            "additionalProperties": True,
+            "description": "Structured quality and musical metadata, or an empty object.",
+            "properties": {},
+            "additionalProperties": False,
         },
     },
-    "required": ["response", "abc"],
+    "required": ["response", "abc", "score"],
     "additionalProperties": False,
 }
 
@@ -51,6 +52,10 @@ def composer_token():
     return token
 
 
+def user_agent():
+    return env("SONGGPT_USER_AGENT", "SongGPT-Composer/2.0")
+
+
 def request_json(path, method="GET", body=None):
     data = None if body is None else json.dumps(body).encode("utf-8")
     request = urllib.request.Request(
@@ -60,6 +65,7 @@ def request_json(path, method="GET", body=None):
         headers={
             "Authorization": f"Bearer {composer_token()}",
             "Content-Type": "application/json",
+            "User-Agent": user_agent(),
         },
     )
     try:
@@ -93,7 +99,13 @@ def prompt_for(song):
 
 def parse_generation(text):
     data = json.loads(text)
-    if "result" in data and isinstance(data["result"], str):
+    if isinstance(data.get("structured_output"), dict):
+        data = data["structured_output"]
+    elif (
+        "result" in data
+        and isinstance(data["result"], str)
+        and data["result"].strip()
+    ):
         data = json.loads(data["result"])
     if "abc" not in data:
         raise RuntimeError("Generator did not return an abc field.")
@@ -121,17 +133,19 @@ def generate_with_claude(song):
         "--no-session-persistence",
         "--permission-mode",
         "dontAsk",
-        "--tools",
-        "",
         prompt_for(song),
     ]
-    completed = subprocess.run(
-        command,
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=int(env("GENERATOR_TIMEOUT_SECONDS", "240")),
-    )
+    try:
+        completed = subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=int(env("GENERATOR_TIMEOUT_SECONDS", "240")),
+        )
+    except subprocess.CalledProcessError as error:
+        detail = (error.stderr or error.stdout or "").strip()
+        raise RuntimeError(f"Claude failed: {detail}") from error
     return parse_generation(completed.stdout)
 
 
@@ -142,27 +156,33 @@ def generate_with_codex(song, workdir):
     command = [
         env("CODEX_BIN", "codex"),
         "exec",
-        "--model",
-        env("CODEX_MODEL", "gpt-5"),
-        "--sandbox",
-        "read-only",
-        "--ask-for-approval",
-        "never",
-        "--ephemeral",
-        "--output-schema",
-        str(schema_path),
-        "--output-last-message",
-        str(output_path),
-        "-",
     ]
-    subprocess.run(
-        command,
-        check=True,
-        input=prompt_for(song),
-        capture_output=True,
-        text=True,
-        timeout=int(env("GENERATOR_TIMEOUT_SECONDS", "240")),
+    if env("CODEX_MODEL"):
+        command.extend(["--model", env("CODEX_MODEL")])
+    command.extend(
+        [
+            "--sandbox",
+            "read-only",
+            "--ephemeral",
+            "--output-schema",
+            str(schema_path),
+            "--output-last-message",
+            str(output_path),
+            "-",
+        ],
     )
+    try:
+        subprocess.run(
+            command,
+            check=True,
+            input=prompt_for(song),
+            capture_output=True,
+            text=True,
+            timeout=int(env("GENERATOR_TIMEOUT_SECONDS", "240")),
+        )
+    except subprocess.CalledProcessError as error:
+        detail = (error.stderr or error.stdout or "").strip()
+        raise RuntimeError(f"Codex failed: {detail}") from error
     return parse_generation(output_path.read_text(encoding="utf-8"))
 
 
@@ -233,6 +253,7 @@ def complete_song(song, generation, midi_path):
         headers={
             "Authorization": f"Bearer {composer_token()}",
             "Content-Type": f"multipart/form-data; boundary={boundary}",
+            "User-Agent": user_agent(),
         },
     )
     with urllib.request.urlopen(request, timeout=120) as response:

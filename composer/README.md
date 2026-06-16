@@ -12,7 +12,7 @@ export SONGGPT_API_BASE="https://songgpt.soli.blue/api"
 export COMPOSER_TOKEN="<same secret configured in Cloudflare Pages>"
 export SONGGPT_GENERATOR="claude" # or "codex"
 export CLAUDE_MODEL="sonnet"
-export CODEX_MODEL="gpt-5"
+# Leave CODEX_MODEL unset to use ~/.codex/config.toml, or set a supported model.
 
 python3 composer/songgpt_composer.py
 ```

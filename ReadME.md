@@ -30,7 +30,7 @@ locally with `abc2midi`.
 2. D1 stores the prompt, system message, status, and finished ABC/response text.
 3. The composer worker polls `/api/composer/claim` using `COMPOSER_TOKEN`.
 4. The worker runs Claude or Codex CLI with a JSON schema requiring `response`,
-   `abc`, and optional `score`.
+   `abc`, and a `score` object.
 5. The worker writes `.abc`, runs `abc2midi`, and uploads the finished files
    back through `/api/composer/:id/complete`.
 6. R2 stores generated `.abc` and `.mid` files. The app reads them from
@@ -75,7 +75,7 @@ export SONGGPT_API_BASE="https://songgpt.soli.blue/api"
 export COMPOSER_TOKEN="<same secret configured in Cloudflare>"
 export SONGGPT_GENERATOR="claude" # or "codex"
 export CLAUDE_MODEL="sonnet"
-export CODEX_MODEL="gpt-5"
+# Leave CODEX_MODEL unset to use ~/.codex/config.toml, or set a supported model.
 
 python3 composer/songgpt_composer.py
 ```
