@@ -133,12 +133,12 @@ def generate_with_claude(song):
         "--no-session-persistence",
         "--permission-mode",
         "dontAsk",
-        prompt_for(song),
     ]
     try:
         completed = subprocess.run(
             command,
             check=True,
+            input=prompt_for(song),
             capture_output=True,
             text=True,
             timeout=int(env("GENERATOR_TIMEOUT_SECONDS", "240")),
@@ -301,7 +301,7 @@ def process_once():
     if not claimed:
         return False
     song = claimed["song"]
-    print(f"Claimed {song['id']}: {song['prompt'][:80]}", flush=True)
+    print(f"Claimed {song['id']}", flush=True)
     try:
         with tempfile.TemporaryDirectory(prefix="songgpt-composer-") as workdir:
             generation = generate_song(song, workdir)
