@@ -67,16 +67,19 @@ a {
 .brand-cluster {
   display: flex;
   align-items: center;
-  gap: 4px;
+  min-width: 0;
+  gap: 10px;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
+  min-width: 0;
   gap: 7px;
   text-decoration: none;
   font-size: 18px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .brand-mark {
@@ -87,9 +90,15 @@ a {
   background: linear-gradient(135deg, var(--blue-dark), var(--blue));
 }
 
+.brand-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .icon-chip {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
   display: inline-grid;
   place-items: center;
   border: 0;
@@ -139,10 +148,11 @@ a {
 .rail-scroll {
   width: 100%;
   display: flex;
-  gap: 0;
+  align-items: flex-start;
+  gap: 14px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 4px 12px 18px;
+  padding: 4px 24px 18px;
   scrollbar-width: none;
 }
 
@@ -167,6 +177,19 @@ a {
   flex-direction: column;
   justify-content: space-between;
   gap: 18px;
+  min-height: 0;
+}
+
+.song-card.compact {
+  flex: 0 0 min(400px, calc(100vw - 48px));
+  width: min(400px, calc(100vw - 48px));
+  min-width: min(400px, calc(100vw - 48px));
+  height: 285px;
+  min-height: 285px;
+  max-height: 285px;
+  justify-content: flex-start;
+  gap: 8px;
+  overflow: hidden;
 }
 
 .song-card:not(.compact) {
@@ -189,6 +212,11 @@ a {
   min-height: 36px;
 }
 
+.song-card.compact .song-actions {
+  flex: 0 0 auto;
+  min-height: 30px;
+}
+
 .song-icon {
   width: 36px;
   height: 36px;
@@ -198,6 +226,11 @@ a {
   background: transparent;
   text-decoration: none;
   cursor: pointer;
+}
+
+.song-card.compact .song-icon {
+  width: 34px;
+  height: 30px;
 }
 
 .download-wrap {
@@ -246,6 +279,11 @@ a {
   text-align: center;
   font-size: 15px;
   font-weight: 600;
+}
+
+.song-card.compact .song-status {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .composer {
@@ -523,14 +561,34 @@ a {
   gap: 12px;
 }
 
+.compact-player {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
 .abcjs-container {
   width: 100%;
   max-height: 160px;
   overflow: auto;
 }
 
+.compact-player .abcjs-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 165px;
+  overflow: hidden;
+}
+
 .abcjs-container svg {
   max-width: 100%;
+}
+
+.compact-player .abcjs-container svg {
+  display: block;
 }
 
 .inverse * {
@@ -550,6 +608,20 @@ a {
   box-sizing: border-box;
 }
 
+.compact-player .abcjs-audio {
+  flex: 0 0 34px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.compact-player .abcjs-inline-audio {
+  width: 100%;
+  height: 34px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
 .abcjs-inline-audio.abcjs-disabled {
   opacity: 0.5;
 }
@@ -564,6 +636,13 @@ a {
   border: 1px solid transparent;
   box-sizing: border-box;
   line-height: 1;
+}
+
+.compact-player .abcjs-inline-audio .abcjs-btn {
+  width: 26px;
+  min-width: 26px;
+  height: 30px;
+  padding: 5px 3px;
 }
 
 .abcjs-btn g {
@@ -586,6 +665,11 @@ a {
   flex: 1;
   padding: 0;
   box-sizing: border-box;
+}
+
+.compact-player .abcjs-inline-audio .abcjs-midi-progress-background {
+  min-width: 60px;
+  margin: 0 6px;
 }
 
 .abcjs-inline-audio .abcjs-midi-progress-indicator {
@@ -612,12 +696,23 @@ a {
   color: #f4f4f4;
 }
 
+.compact-player .abcjs-inline-audio .abcjs-midi-clock {
+  flex: 0 0 auto;
+  margin: 1px 0 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .abcjs-inline-audio .abcjs-tempo-wrapper {
   font-size: 10px;
   color: #f4f4f4;
   box-sizing: border-box;
   display: flex;
   align-items: center;
+}
+
+.compact-player .abcjs-inline-audio .abcjs-tempo-wrapper {
+  display: none;
 }
 
 .abcjs-inline-audio .abcjs-midi-tempo {
@@ -661,11 +756,20 @@ a {
 
 @media (max-width: 640px) {
   .topbar-inner {
-    align-items: flex-start;
+    align-items: center;
+    gap: 12px;
   }
 
   .topbar {
     padding: 16px;
+  }
+
+  .brand-cluster {
+    flex: 1 1 auto;
+  }
+
+  .brand {
+    font-size: 16px;
   }
 
   .github-button {
@@ -696,5 +800,16 @@ a {
   .song-card,
   .song-skeleton {
     margin: 8px;
+  }
+
+  .rail-scroll {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+
+  .song-card.compact {
+    flex-basis: min(360px, calc(100vw - 40px));
+    width: min(360px, calc(100vw - 40px));
+    min-width: min(360px, calc(100vw - 40px));
   }
 }

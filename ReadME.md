@@ -16,7 +16,7 @@ Production:
 - App: `https://songgpt.soli.blue/`
 - Pages fallback: `https://songgpt.pages.dev/`
 - API routes: `https://songgpt.soli.blue/api/...`
-- API hostname: `https://api.songgpt.soli.blue/api/...`
+- API hostname: `https://api.songgpt.soli.blue/...`
 
 ## Repository Structure
 
@@ -60,11 +60,13 @@ migration because it returned billing/availability errors.
 ## Cloudflare Setup
 
 Use secrets from your local environment at command time. Do not commit them.
+The command below assumes a repo-local ignored `.env` containing your
+Cloudflare token/account variables.
 
 ```bash
 cd front-end
 set -a
-source /home/soli/projects/soli.blue/.env
+source ../.env
 set +a
 
 npx wrangler@latest d1 create songgpt
@@ -86,12 +88,14 @@ npx wrangler@latest pages deploy dist --project-name=songgpt --branch=main --com
 ```
 
 Attach `songgpt.soli.blue` and `api.songgpt.soli.blue` to the Pages project.
-Both hostnames route to the same Pages Functions deployment.
+The app hostname uses Pages Functions at `/api/...`; middleware rewrites only
+the API hostname, so `https://api.songgpt.soli.blue/songs/` maps to the same API
+without requiring callers to include `/api`.
 
 ## Composer Worker
 
 ```bash
-export SONGGPT_API_BASE="https://api.songgpt.soli.blue/api"
+export SONGGPT_API_BASE="https://api.songgpt.soli.blue"
 export COMPOSER_TOKEN="<same secret configured in Cloudflare>"
 export SONGGPT_GENERATOR="claude" # or "codex"
 export CLAUDE_MODEL="sonnet"

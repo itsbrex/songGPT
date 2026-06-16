@@ -100,7 +100,7 @@ function Header() {
           <div className="brand-cluster">
             <Link to="/songs/" className="brand" aria-label="SongGPT home">
               <span className="brand-mark" />
-              <span>SongGPT.xyz</span>
+              <span className="brand-name">SongGPT.xyz</span>
             </Link>
             <button
               className="icon-chip"
@@ -142,9 +142,6 @@ function Header() {
 function Footer() {
   return (
     <footer className="footer">
-      <a href="https://discord.gg/ArjurfDCCy" target="_blank" rel="noreferrer">
-        Join our Discord
-      </a>
       <p>
         Made with love by{" "}
         <a href="https://twitter.com/_xSoli" target="_blank" rel="noreferrer">
@@ -475,7 +472,9 @@ function SongCard({ song, compact = false }) {
         </button>
       </div>
       {song.status !== "complete" ? <SongStatus song={song} /> : null}
-      {abc && song.status === "complete" ? <ABCAudioPlayer abc={abc} color={foreground} /> : null}
+      {abc && song.status === "complete" ? (
+        <ABCAudioPlayer abc={abc} color={foreground} compact={compact} />
+      ) : null}
       <Modal
         open={responseOpen}
         onClose={() => setResponseOpen(false)}
@@ -519,7 +518,7 @@ function DownloadMenu({ songID }) {
   );
 }
 
-function ABCAudioPlayer({ abc, color = "#ffffff" }) {
+function ABCAudioPlayer({ abc, color = "#ffffff", compact = false }) {
   const notationRef = React.useRef(null);
   const audioRef = React.useRef(null);
 
@@ -528,17 +527,18 @@ function ABCAudioPlayer({ abc, color = "#ffffff" }) {
     notationRef.current.innerHTML = "";
     audioRef.current.innerHTML = "";
     const visualObj = ABCJS.renderAbc(notationRef.current, abc, {
-      staffwidth: 740,
+      staffwidth: compact ? 340 : 740,
       add_classes: true,
       responsive: "resize",
+      scale: compact ? 0.62 : 1,
     });
     const synthController = new ABCJS.synth.SynthController();
     synthController.load(audioRef.current, null, {
       displayPlay: true,
       displayLoop: false,
-      displayRestart: false,
+      displayRestart: !compact,
       displayProgress: true,
-      displayWarp: true,
+      displayWarp: !compact,
     });
     const midiBuffer = new ABCJS.synth.CreateSynth();
     midiBuffer
@@ -549,10 +549,14 @@ function ABCAudioPlayer({ abc, color = "#ffffff" }) {
       notationRef.current && (notationRef.current.innerHTML = "");
       audioRef.current && (audioRef.current.innerHTML = "");
     };
-  }, [abc]);
+  }, [abc, compact]);
 
   return (
-    <div className={`abc-player ${color !== "#ffffff" ? "inverse" : ""}`}>
+    <div
+      className={`abc-player ${compact ? "compact-player" : ""} ${
+        color !== "#ffffff" ? "inverse" : ""
+      }`}
+    >
       <div ref={notationRef} className="abcjs-container" style={{ color }} />
       <div ref={audioRef} className="abcjs-audio" style={{ color }} />
     </div>

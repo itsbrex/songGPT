@@ -42,7 +42,7 @@ def env(name, default=None):
 
 
 def api_base():
-    return env("SONGGPT_API_BASE", "https://api.songgpt.soli.blue/api").rstrip("/")
+    return env("SONGGPT_API_BASE", "https://api.songgpt.soli.blue").rstrip("/")
 
 
 def composer_token():

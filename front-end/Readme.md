@@ -11,7 +11,7 @@ SongGPT flow and visual rhythm while replacing Expo/Firebase with:
 
 The hosted app is available at `https://songgpt.soli.blue/`; API routes are
 served from the same Pages Functions deployment at `/api/...` and from
-`https://api.songgpt.soli.blue/api/...`.
+`https://api.songgpt.soli.blue/...`.
 
 ## Commands
 

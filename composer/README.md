@@ -8,7 +8,7 @@ either Claude or Codex, renders MIDI locally, and uploads the ABC/MIDI files to
 R2 through the protected composer endpoint.
 
 ```bash
-export SONGGPT_API_BASE="https://api.songgpt.soli.blue/api"
+export SONGGPT_API_BASE="https://api.songgpt.soli.blue"
 export COMPOSER_TOKEN="<same secret configured in Cloudflare Pages>"
 export SONGGPT_GENERATOR="claude" # or "codex"
 export CLAUDE_MODEL="sonnet"
