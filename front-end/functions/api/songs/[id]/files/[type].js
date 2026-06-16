@@ -2,7 +2,13 @@ import { contentTypes, cors, fileKeys, json } from "../../../../_shared.js";
 
 export const onRequestOptions = () => cors();
 
-export const onRequestGet = async ({ env, params }) => {
+const fileHeaders = (type, key) => ({
+  "Content-Type": contentTypes[type],
+  "Content-Disposition": `attachment; filename="${key.split("/").pop()}"`,
+  "Cache-Control": "public, max-age=31536000, immutable",
+});
+
+const fileResponse = async ({ env, params }, includeBody) => {
   if (!contentTypes[params.type]) return json({ error: "File not found." }, 404);
   const keys = fileKeys(params.id);
   const key = keys[params.type];
@@ -12,22 +18,18 @@ export const onRequestGet = async ({ env, params }) => {
       .bind(params.id)
       .first();
     if (row?.abc) {
-      return new Response(row.abc, {
-        headers: {
-          "Content-Type": contentTypes.abc,
-          "Content-Disposition": `attachment; filename="${key.split("/").pop()}"`,
-          "Cache-Control": "public, max-age=31536000, immutable",
-        },
+      return new Response(includeBody ? row.abc : null, {
+        headers: fileHeaders("abc", key),
       });
     }
   }
   if (!object) return json({ error: "File not found." }, 404);
 
-  return new Response(object.body, {
-    headers: {
-      "Content-Type": contentTypes[params.type],
-      "Content-Disposition": `attachment; filename="${key.split("/").pop()}"`,
-      "Cache-Control": "public, max-age=31536000, immutable",
-    },
+  return new Response(includeBody ? object.body : null, {
+    headers: fileHeaders(params.type, key),
   });
 };
+
+export const onRequestGet = (context) => fileResponse(context, true);
+
+export const onRequestHead = (context) => fileResponse(context, false);

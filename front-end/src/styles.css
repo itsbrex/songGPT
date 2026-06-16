@@ -591,6 +591,11 @@ a {
   display: block;
 }
 
+.abcjs-container text,
+.abcjs-container tspan {
+  stroke: none !important;
+}
+
 .inverse * {
   color: #111827 !important;
   fill: #111827 !important;

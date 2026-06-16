@@ -10,6 +10,8 @@ const apiBase = (process.env.SONGGPT_API_BASE || "https://api.songgpt.soli.blue"
   /\/$/,
   "",
 );
+const proofSongId =
+  process.env.SONGGPT_PROOF_SONG_ID || "661874d5-52fc-4cd9-8da4-df4a6b0bf68f";
 
 const failures = [];
 const passes = [];
@@ -72,6 +74,20 @@ async function fetchJson(url) {
   return response.json();
 }
 
+async function checkFile(url, expectedContentType, method = "GET") {
+  const response = await fetch(url, { method });
+  assert(response.ok, `${method} ${url} returned ${response.status}`);
+  const contentType = response.headers.get("content-type") || "";
+  assert(
+    contentType.includes(expectedContentType),
+    `${method} ${url} returned ${expectedContentType}`,
+  );
+  if (method === "GET") {
+    const body = await response.arrayBuffer();
+    assert(body.byteLength > 0, `${method} ${url} returned a non-empty body`);
+  }
+}
+
 async function checkLiveUrls() {
   const rootResponse = await fetchJson(`${apiBase}/`);
   assert(rootResponse.ok === true, "API hostname root returns health payload");
@@ -84,6 +100,11 @@ async function checkLiveUrls() {
 
   const legacySongs = await fetchJson(`${apiBase}/api/songs/?limit=1`);
   assert(Array.isArray(legacySongs.songs), "compatibility /api/songs still works");
+
+  await checkFile(`${apiBase}/songs/${proofSongId}/files/abc`, "text/vnd.abc");
+  await checkFile(`${apiBase}/songs/${proofSongId}/files/abc`, "text/vnd.abc", "HEAD");
+  await checkFile(`${apiBase}/songs/${proofSongId}/files/mid`, "audio/midi");
+  await checkFile(`${apiBase}/songs/${proofSongId}/files/mid`, "audio/midi", "HEAD");
 
   const appResponse = await fetch(appUrl);
   assert(appResponse.ok, `${appUrl} returned ${appResponse.status}`);
