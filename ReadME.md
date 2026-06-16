@@ -1,15 +1,22 @@
 # songGPT
 
 songGPT is an open-source project that generates short musical compositions in
-ABC notation, converts them to MIDI, and renders audio files. The current hosted
-path is designed to stay on Cloudflare's free tiers: Cloudflare Pages for the
-React app, Pages Functions for the API, D1 for song metadata, and R2 for ABC,
-and MIDI files.
+ABC notation, converts them to MIDI, and plays them in the browser. The current
+hosted path is designed to stay on Cloudflare's free tiers: Cloudflare Pages for
+the React app, Pages Functions for the API, D1 for song metadata, and R2 for
+ABC and MIDI files.
 
 The composer itself runs outside Cloudflare through an existing subscription CLI
 login. Use `SONGGPT_GENERATOR=claude` for Claude Code or `SONGGPT_GENERATOR=codex`
 for Codex CLI; both paths use structured JSON output and then render the music
 locally with `abc2midi`.
+
+Production:
+
+- App: `https://songgpt.soli.blue/`
+- Pages fallback: `https://songgpt.pages.dev/`
+- API routes: `https://songgpt.soli.blue/api/...`
+- API hostname: `https://api.songgpt.soli.blue/api/...`
 
 ## Repository Structure
 
@@ -35,6 +42,20 @@ locally with `abc2midi`.
    back through `/api/composer/:id/complete`.
 6. R2 stores generated `.abc` and `.mid` files. The app reads them from
    `/api/songs/:id/files/:type`.
+
+## Firebase Migration
+
+Firebase is no longer used by the hosted application. The legacy Firestore
+`songs` collection from project `songgpt-xyz` was imported into D1:
+
+- `openai/gpt-4` complete songs: 1,628
+- `openai/gpt-4` score-only legacy rows: 259
+
+The score-only rows are kept for archival completeness and marked `failed`
+because they did not contain ABC notation. Completed legacy rows keep their ABC
+notation in D1, and the ABC download route falls back to D1 when an R2 object is
+not present. Firebase Storage was not used as a source of truth during the
+migration because it returned billing/availability errors.
 
 ## Cloudflare Setup
 
@@ -64,14 +85,13 @@ npm run build
 npx wrangler@latest pages deploy dist --project-name=songgpt --branch=main --commit-dirty=true
 ```
 
-Attach `songgpt.soli.blue` to the Pages project. If you want a separate API
-hostname, attach `api.songgpt.soli.blue` to the same project or a small Worker
-that forwards to the Pages Functions routes.
+Attach `songgpt.soli.blue` and `api.songgpt.soli.blue` to the Pages project.
+Both hostnames route to the same Pages Functions deployment.
 
 ## Composer Worker
 
 ```bash
-export SONGGPT_API_BASE="https://songgpt.soli.blue/api"
+export SONGGPT_API_BASE="https://api.songgpt.soli.blue/api"
 export COMPOSER_TOKEN="<same secret configured in Cloudflare>"
 export SONGGPT_GENERATOR="claude" # or "codex"
 export CLAUDE_MODEL="sonnet"

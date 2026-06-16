@@ -9,6 +9,10 @@ SongGPT flow and visual rhythm while replacing Expo/Firebase with:
 - D1 for song metadata
 - R2 for generated ABC and MIDI files
 
+The hosted app is available at `https://songgpt.soli.blue/`; API routes are
+served from the same Pages Functions deployment at `/api/...` and from
+`https://api.songgpt.soli.blue/api/...`.
+
 ## Commands
 
 ```bash
