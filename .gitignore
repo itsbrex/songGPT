@@ -1,1 +1,12 @@
 .env
+*.env
+node_modules/
+dist/
+web-build/
+data/
+back-end/data/
+front-end/dist/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.DS_Store

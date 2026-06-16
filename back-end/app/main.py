@@ -10,7 +10,7 @@ def create_application() -> FastAPI:
     application = FastAPI(
         title="SongGPT",
         version="0.0.1",
-        description="Experimental open-source project exploring the potential of LLMs, specifically ChatGPT, in generating original and customizable musical compositions.",
+        description="Experimental open-source project exploring the potential of local LLM tooling in generating original and customizable musical compositions.",
     )
     # middlewares
     application.add_middleware(

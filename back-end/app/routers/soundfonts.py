@@ -2,17 +2,40 @@ import os
 import re
 import shlex
 import subprocess
+from pathlib import Path
 from typing import Dict, List
 
 from fastapi import APIRouter, status
 
 router = APIRouter()
+SOUNDFONT_DIRS = [Path("app/data/soundfonts"), Path("/usr/share/sounds/sf2")]
+
+
+def find_soundfonts() -> List[str]:
+    soundfonts = []
+    for directory in SOUNDFONT_DIRS:
+        if directory.exists():
+            soundfonts.extend(
+                path.name
+                for path in directory.iterdir()
+                if path.suffix.lower() in {".sf2", ".sf3"}
+            )
+    return sorted(set(soundfonts))
+
+
+def soundfont_path(soundfont: str) -> Path:
+    if "/" in soundfont or "\\" in soundfont:
+        raise FileNotFoundError(soundfont)
+    for directory in SOUNDFONT_DIRS:
+        path = directory / soundfont
+        if path.exists():
+            return path
+    raise FileNotFoundError(soundfont)
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[str])
 async def list_soundfonts():
-    soundfonts = os.listdir("app/data/soundfonts")
-    return soundfonts
+    return find_soundfonts()
 
 
 @router.get(
@@ -21,7 +44,7 @@ async def list_soundfonts():
     response_model=List[Dict],
 )
 async def list_instruments(soundfont: str):
-    path = f"app/data/soundfonts/{soundfont}"
+    path = soundfont_path(soundfont)
     command = f"fluidsynth {path} -a file -n -q"
     input_str = "inst 1"
 

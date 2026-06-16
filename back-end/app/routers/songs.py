@@ -1,35 +1,85 @@
+import os
+import tempfile
+from uuid import UUID
+
 from app.daos.songs import SongsDAO
 from app.internal.config import log
-from app.internal.firebase import upload_file
+from app.internal.storage import (
+    SONG_FILE_TYPES,
+    content_type_for,
+    get_song_file,
+    save_song_file,
+)
 from app.internal.SongGPT import SongGPT
-from app.schemas.songs import SongCreate, SongCreateInput
-from fastapi import APIRouter, status
+from app.schemas.songs import SongCreate, SongCreateInput, SongList, SongRead
+from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import FileResponse
 
 router = APIRouter()
+
+
+def resolve_soundfont_path(soundfont: str) -> str:
+    if "/" in soundfont or "\\" in soundfont:
+        raise HTTPException(status_code=400, detail="Invalid soundfont name.")
+    candidates = [
+        f"app/data/soundfonts/{soundfont}",
+        f"/usr/share/sounds/sf2/{soundfont}",
+        "/usr/share/sounds/sf2/FluidR3_GM.sf2",
+    ]
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+    raise HTTPException(status_code=500, detail="No usable soundfont is configured.")
+
+
+@router.get("/", status_code=status.HTTP_200_OK, response_model=SongList)
+async def list_songs(
+    limit: int = Query(default=6, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+):
+    return SongsDAO().list(limit=limit, offset=offset)
+
+
+@router.get("/{song_id}", status_code=status.HTTP_200_OK, response_model=SongRead)
+async def get_song(song_id: UUID):
+    song = SongsDAO().get(song_id)
+    if not song:
+        raise HTTPException(status_code=404, detail="Song not found.")
+    return song
+
+
+@router.get("/{song_id}/files/{file_type}", status_code=status.HTTP_200_OK)
+async def get_song_file_response(song_id: UUID, file_type: str):
+    if file_type not in SONG_FILE_TYPES:
+        raise HTTPException(status_code=404, detail="File type not found.")
+    file_path = get_song_file(song_id, file_type)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Song file not found.")
+    return FileResponse(
+        file_path,
+        media_type=content_type_for(file_type),
+        filename=file_path.name,
+    )
 
 
 @router.post("/", status_code=status.HTTP_200_OK)
 async def create_song(payload: SongCreateInput):
     songGPT = SongGPT()
-    # 1. Generate ABC using ChatGPT (LLM)
-    log.info("Generating ABC...")
-    response, abc, abc_file_path = songGPT.generate_abc(
-        system_message=payload.system_message,
-        prompt=payload.prompt,
-    )
-    log.info("Generated ABC")
-    # 2. Convert the ABC to MIDI using ABC2MIDI
-    midi_file_path = songGPT.abc_to_midi(abc_file_path)
-    # 3. Convert the MIDI file to a WAV file
-    wav_file_path = songGPT.midi_to_wav(
-        midi_file_path, f"app/data/soundfonts/{payload.soundfont}"
-    )
-    # 4. Save generated files / data
-    songDao = SongsDAO()
-    ## Create a new song in firestore
-    songID = songDao.create(SongCreate(**payload.dict(), abc=abc, response=response))
-    # upload all files to google cloud storage
-    upload_file(abc_file_path, f"songs/{songID}", f"{songID}.abc", "text/vnd.abc")
-    upload_file(midi_file_path, f"songs/{songID}", f"{songID}.mid", "audio/midi")
-    upload_file(wav_file_path, f"songs/{songID}", f"{songID}.wav", "audio/wav")
-    return songID
+    soundfont_path = resolve_soundfont_path(payload.soundfont)
+    with tempfile.TemporaryDirectory(prefix="songgpt-") as workdir:
+        log.info("Generating ABC...")
+        response, abc, abc_file_path, score = songGPT.generate_abc(
+            system_message=payload.system_message,
+            prompt=payload.prompt,
+            output_dir=workdir,
+        )
+        log.info("Generated ABC")
+        midi_file_path = songGPT.abc_to_midi(abc_file_path)
+        wav_file_path = songGPT.midi_to_wav(midi_file_path, soundfont_path)
+
+        song = SongCreate(**payload.dict(), abc=abc, response=response, score=score)
+        song_id = SongsDAO().create(song)
+        save_song_file(song_id, abc_file_path, "abc")
+        save_song_file(song_id, midi_file_path, "mid")
+        save_song_file(song_id, wav_file_path, "wav")
+    return song_id

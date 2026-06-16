@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "songgpt",
+  "compatibility_date": "2026-06-16",
+  "pages_build_output_dir": "dist",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://songgpt.soli.blue",
+    "DAILY_SONG_LIMIT": "25"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "songgpt",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SONG_FILES",
+      "bucket_name": "songgpt-files"
+    }
+  ]
+}

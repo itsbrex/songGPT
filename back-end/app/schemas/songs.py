@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -23,6 +23,7 @@ class SongCreate(SongCreateInput):
     abc: Optional[str] = None
     score: Optional[dict] = None
     response: Optional[str] = None
+    is_featured: bool = False
     id: UUID = Field(default_factory=uuid4)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -30,3 +31,14 @@ class SongCreate(SongCreateInput):
 
 class SongRead(SongCreate):
     pass
+
+
+class SongList(BaseModel):
+    songs: List[SongRead]
+    next_offset: Optional[int] = None
+
+
+class SongGeneration(BaseModel):
+    response: str
+    abc: str
+    score: Optional[Dict] = None

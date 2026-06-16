@@ -1,60 +1,85 @@
 # songGPT
 
-songGPT is an open-source project that uses ChatGPT to generate musical compositions. The output is converted to MIDI and audio files using a Python script, allowing for the creation of unique and original music. The project is hosted on songGPT.xyz.
+songGPT is an open-source project that generates short musical compositions in
+ABC notation, converts them to MIDI, and renders audio files. The current hosted
+path is designed to stay on Cloudflare's free tiers: Cloudflare Pages for the
+React app, Pages Functions for the API, D1 for song metadata, and R2 for ABC,
+and MIDI files.
+
+The composer itself runs outside Cloudflare through an existing subscription CLI
+login. Use `SONGGPT_GENERATOR=claude` for Claude Code or `SONGGPT_GENERATOR=codex`
+for Codex CLI; both paths use structured JSON output and then render the music
+locally with `abc2midi`.
 
 ## Repository Structure
-This repository contains three main folders:
 
-- **back-end**: FastAPI-based Python code for the backend of the SongGPT project. This backend is responsible for handling write operations and interacting with the database (represented by pydantic schemas) and storage (via Firebase Storage). The backend is connected to OpenAI Beta API.
+- **front-end**: Vite React app, Cloudflare Pages Functions, D1 migrations, and
+  R2 bindings.
+- **composer**: A small polling worker that claims queued songs from the
+  Cloudflare API, runs Claude or Codex CLI, renders MIDI, and uploads
+  results.
+- **back-end**: The original FastAPI shape preserved as a local/VPS-compatible
+  fallback. It now uses the same local CLI composer idea with SQLite and local
+  file storage instead of Firebase/provider APIs.
+- **notebooks**: Historical Jupyter experiments from the first version of the
+  project.
 
-- **frontend**: A React Native cross-platform app. The app uses the nativebase framework, react-navigation, and Firebase.
+## How It Works
 
-- **notebooks**: A collection of Jupyter notebooks used for exploration and rapid experimentation.
+1. The React app creates a queued song row through `/api/songs`.
+2. D1 stores the prompt, system message, status, and finished ABC/response text.
+3. The composer worker polls `/api/composer/claim` using `COMPOSER_TOKEN`.
+4. The worker runs Claude or Codex CLI with a JSON schema requiring `response`,
+   `abc`, and optional `score`.
+5. The worker writes `.abc`, runs `abc2midi`, and uploads the finished files
+   back through `/api/composer/:id/complete`.
+6. R2 stores generated `.abc` and `.mid` files. The app reads them from
+   `/api/songs/:id/files/:type`.
+
+## Cloudflare Setup
+
+Use secrets from your local environment at command time. Do not commit them.
+
+```bash
+cd front-end
+set -a
+source /home/soli/projects/soli.blue/.env
+set +a
+
+npx wrangler@latest d1 create songgpt
+npx wrangler@latest r2 bucket create songgpt-files
+```
+
+Copy the created D1 database id into `front-end/wrangler.jsonc`, then apply the
+migration:
+
+```bash
+npx wrangler@latest d1 migrations apply songgpt --remote
+```
+
+Set `COMPOSER_TOKEN` as a Pages secret in Cloudflare, then deploy:
+
+```bash
+npm run build
+npx wrangler@latest pages deploy dist --project-name=songgpt --branch=main --commit-dirty=true
+```
+
+Attach `songgpt.soli.blue` to the Pages project. If you want a separate API
+hostname, attach `api.songgpt.soli.blue` to the same project or a small Worker
+that forwards to the Pages Functions routes.
+
+## Composer Worker
+
+```bash
+export SONGGPT_API_BASE="https://songgpt.soli.blue/api"
+export COMPOSER_TOKEN="<same secret configured in Cloudflare>"
+export SONGGPT_GENERATOR="claude" # or "codex"
+export CLAUDE_MODEL="sonnet"
+export CODEX_MODEL="gpt-5"
+
+python3 composer/songgpt_composer.py
+```
 
 ## Contributing
-We welcome contributions to the project! Please see the CONTRIBUTING.md file for more information.
 
-## How does this work?
-
-1. We pass the following prompt to ChatGPT API:
-```
-As Zima, an AI composer, create short, expressive music compositions (<60s) in ABC format. Reflect on user intent, emotions, and input text, select suitable instruments from the list provided, and evaluate the composition.
-
-Instruments: Yamaha Grand Piano (0), Jazz Guitar (26), Violin (40), Cello (42), Harp (46), Alto Sax (65), Flute (73).
-
-Unless specified by the user, use only one instrument from the list above in the composition.
-
-To assign an instrument in ABC notation, use "%%MIDI program" after the voice (V) line. Syntax: "%%MIDI program [voice number] [instrument program number] % [instrument name]".
-
-Consider incorporating these music theory concepts in your composition:
-- Diatonic scales and key signatures (e.g., C major scale: C, D, E, F, G, A, B)
-- Harmonic progressions and cadences (e.g., ii-V-I progression: Dm7, G7, Cmaj7)
-- Rhythmic patterns and time signatures (e.g., syncopated rhythm in 4/4 time)
-- Melodic contour and phrasing (e.g., ascending melody with a peak, followed by a descent)
-- Chord inversions and voicings (e.g., Cmaj7 in first inversion: E, G, B, C)
-- Dynamic markings and articulations (e.g., staccato notes or crescendo)
-
-Share your thought process, actions, and observations in text. Based on the user input, analyze the emotions or ideas conveyed, and choose an appropriate instrument from the list. Apply relevant music theory concepts to enhance the composition. Provide the final ABC notation within <abc> and </abc> tags.
-
-Example Output:
-
-Input text: "A peaceful walk in the garden."
-Thought: The input text conveys a feeling of serenity and tranquility. I will choose the Harp for its soothing and delicate qualities. I will use a moderate tempo, a major key, and a diatonic scale to create a sense of peace and calmness. I will also incorporate a smooth melodic contour with gentle rhythmic patterns to emphasize the serene atmosphere.
-Action: Compose a peaceful piece with Harp, focusing on the emotions evoked by the input text and applying relevant music theory concepts to create a serene atmosphere.
-Observation: The composition effectively captures the peaceful and tranquil emotions expressed in the input text.
-
-<abc>
-X:1
-T:Garden Stroll
-M:3/4
-L:1/8
-Q:1/4=60
-K:Gmaj
-V:1 name=Harp clef=treble
-%%MIDI program 1 46 % Harp
-|: B2A2G2 | A2B2c2 :|
-</abc>w
-```
-
-2. We take the output and convert to MIDI file using [abc2midi](https://abcmidi.sourceforge.io/)
-3. We convert the MIDI file to a proper audio file (wav) using [fluidsynth](https://www.fluidsynth.org/)
+We welcome contributions to the project. Please see `CONTRIBUTING.md` for more.
