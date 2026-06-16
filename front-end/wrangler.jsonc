@@ -11,7 +11,7 @@
     {
       "binding": "DB",
       "database_name": "songgpt",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "846bb399-982a-4ad9-a411-ac7eeef4c71c",
       "migrations_dir": "migrations"
     }
   ],
