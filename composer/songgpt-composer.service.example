@@ -1,0 +1,16 @@
+[Unit]
+Description=SongGPT local CLI composer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/songgpt
+EnvironmentFile=/opt/songgpt/composer/songgpt-composer.env
+ExecStartPre=/usr/bin/python3 /opt/songgpt/composer/songgpt_composer.py --check
+ExecStart=/usr/bin/python3 /opt/songgpt/composer/songgpt_composer.py
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

@@ -117,6 +117,10 @@ export CLAUDE_MODEL="sonnet"
 python3 composer/songgpt_composer.py
 ```
 
+For continuous operation on a local machine or VPS, use
+`composer/songgpt-composer.service.example` and keep the real
+`COMPOSER_TOKEN` in an ignored env file.
+
 ## Contributing
 
 We welcome contributions to the project. Please see `CONTRIBUTING.md` for more.

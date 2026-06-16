@@ -22,3 +22,22 @@ For a single smoke-test job:
 ```bash
 python3 composer/songgpt_composer.py --once
 ```
+
+For a safe preflight that does not claim a job:
+
+```bash
+python3 composer/songgpt_composer.py --check
+```
+
+## Continuous Worker
+
+Copy `composer/songgpt-composer.env.example` to an ignored env file and set the
+real `COMPOSER_TOKEN`. The example systemd unit assumes the repo is checked out
+at `/opt/songgpt`:
+
+```bash
+sudo cp composer/songgpt-composer.service.example /etc/systemd/system/songgpt-composer.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now songgpt-composer
+sudo journalctl -u songgpt-composer -f
+```

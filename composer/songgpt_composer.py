@@ -195,6 +195,42 @@ def generate_song(song, workdir):
     raise RuntimeError("SONGGPT_GENERATOR must be 'claude' or 'codex'.")
 
 
+def check_environment():
+    errors = []
+    generator = env("SONGGPT_GENERATOR", "claude").lower()
+    generator_bin = (
+        env("CLAUDE_BIN", "claude")
+        if generator == "claude"
+        else env("CODEX_BIN", "codex")
+    )
+
+    print(f"API base: {api_base()}")
+    print(f"Generator: {generator}")
+
+    if generator not in {"claude", "codex"}:
+        errors.append("SONGGPT_GENERATOR must be 'claude' or 'codex'.")
+    elif shutil.which(generator_bin):
+        print(f"Generator binary: {generator_bin}")
+    else:
+        errors.append(f"Generator binary not found: {generator_bin}")
+
+    if env("COMPOSER_TOKEN"):
+        print("Composer token: configured")
+    else:
+        errors.append("COMPOSER_TOKEN is required.")
+
+    if shutil.which("abc2midi"):
+        print("abc2midi: installed")
+    else:
+        errors.append("abc2midi is not installed.")
+
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", flush=True)
+        return False
+    return True
+
+
 def run_checked(command):
     subprocess.run(command, check=True, capture_output=True, text=True)
 
@@ -281,7 +317,14 @@ def process_once():
 def main():
     parser = argparse.ArgumentParser(description="SongGPT Cloudflare composer worker")
     parser.add_argument("--once", action="store_true", help="Process at most one job.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Validate environment and local tools without claiming a job.",
+    )
     args = parser.parse_args()
+    if args.check:
+        raise SystemExit(0 if check_environment() else 1)
     poll_seconds = int(env("POLL_SECONDS", "10"))
     while True:
         had_work = process_once()
