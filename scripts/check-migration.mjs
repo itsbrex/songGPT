@@ -102,6 +102,15 @@ async function checkFile(url, expectedContentType, method = "GET") {
   }
 }
 
+function songsAreNewestFirst(songs) {
+  return songs.every((song, index) => {
+    if (index === 0) return true;
+    const previous = Date.parse(songs[index - 1].created_at || "");
+    const current = Date.parse(song.created_at || "");
+    return Number.isFinite(previous) && Number.isFinite(current) && previous >= current;
+  });
+}
+
 async function checkComposerProof(songId, generator) {
   const song = await fetchJson(`${apiBase}/songs/${songId}`);
   assert(song.status === "complete", `${generator} proof song is complete`);
@@ -123,10 +132,11 @@ async function checkLiveUrls() {
   assert(rootResponse.ok === true, "API hostname root returns health payload");
   assert(rootResponse.endpoints?.includes("/songs/"), "API root advertises /songs/");
 
-  const cleanSongs = await fetchJson(`${apiBase}/songs/?limit=1`);
+  const cleanSongs = await fetchJson(`${apiBase}/songs/?limit=6`);
   assert(Array.isArray(cleanSongs.songs), "API hostname /songs returns a songs array");
   assert(cleanSongs.songs.length > 0, "API hostname /songs returns migrated data");
   assert(Boolean(cleanSongs.songs[0]?.model), "song rows expose a model field");
+  assert(songsAreNewestFirst(cleanSongs.songs), "API hostname /songs sorts songs by recency");
 
   const legacySongs = await fetchJson(`${apiBase}/api/songs/?limit=1`);
   assert(Array.isArray(legacySongs.songs), "compatibility /api/songs still works");

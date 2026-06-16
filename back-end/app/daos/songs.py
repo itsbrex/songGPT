@@ -82,7 +82,7 @@ class SongsDAO:
             rows = connection.execute(
                 """
                 SELECT * FROM songs
-                ORDER BY status = 'complete' DESC, created_at ASC, is_featured ASC
+                ORDER BY created_at DESC, id DESC
                 LIMIT ? OFFSET ?
                 """,
                 (safe_limit + 1, safe_offset),
