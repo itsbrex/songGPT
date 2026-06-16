@@ -527,10 +527,9 @@ function ABCAudioPlayer({ abc, color = "#ffffff", compact = false }) {
     notationRef.current.innerHTML = "";
     audioRef.current.innerHTML = "";
     const visualObj = ABCJS.renderAbc(notationRef.current, abc, {
-      staffwidth: compact ? 340 : 740,
+      staffwidth: 740,
       add_classes: true,
       responsive: "resize",
-      scale: compact ? 0.62 : 1,
     });
     const synthController = new ABCJS.synth.SynthController();
     synthController.load(audioRef.current, null, {
