@@ -8,7 +8,7 @@ export const onRequestGet = async ({ env, request }) => {
   const offset = Math.max(0, Number(url.searchParams.get("offset") || 0));
   const result = await env.DB.prepare(
     `SELECT * FROM songs
-     ORDER BY created_at ASC, is_featured ASC
+     ORDER BY status = 'complete' DESC, created_at ASC, is_featured ASC
      LIMIT ? OFFSET ?`,
   )
     .bind(limit + 1, offset)
@@ -54,16 +54,18 @@ export const onRequestPost = async ({ env, request }) => {
       system_message,
       prompt,
       soundfont,
+      model,
       status,
       created_at,
       updated_at
-    ) VALUES (?, ?, ?, ?, 'queued', ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, 'queued', ?, ?)`,
   )
     .bind(
       id,
       String(body.system_message).slice(0, 2500),
       String(body.prompt).slice(0, 1000),
       String(body.soundfont || "FluidR3_GM.sf2"),
+      String(body.model || "local-cli").slice(0, 120),
       timestamp,
       timestamp,
     )

@@ -42,6 +42,7 @@ export const songRow = (row) => {
     system_message: row.system_message,
     prompt: row.prompt,
     soundfont: row.soundfont,
+    model: row.model || "local-cli",
     status: row.status,
     abc: row.abc,
     response: row.response,

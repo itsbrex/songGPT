@@ -31,6 +31,8 @@ class SongsDAO:
                     system_message TEXT NOT NULL,
                     prompt TEXT NOT NULL,
                     soundfont TEXT NOT NULL,
+                    model TEXT NOT NULL DEFAULT 'local-cli',
+                    status TEXT NOT NULL DEFAULT 'complete',
                     abc TEXT,
                     score TEXT,
                     response TEXT,
@@ -46,6 +48,18 @@ class SongsDAO:
                 ON songs (created_at, is_featured)
                 """
             )
+            columns = {
+                row["name"]
+                for row in connection.execute("PRAGMA table_info(songs)").fetchall()
+            }
+            if "model" not in columns:
+                connection.execute(
+                    "ALTER TABLE songs ADD COLUMN model TEXT NOT NULL DEFAULT 'local-cli'"
+                )
+            if "status" not in columns:
+                connection.execute(
+                    "ALTER TABLE songs ADD COLUMN status TEXT NOT NULL DEFAULT 'complete'"
+                )
 
     def _row_to_song(self, row: sqlite3.Row) -> SongRead:
         data = dict(row)
@@ -68,7 +82,7 @@ class SongsDAO:
             rows = connection.execute(
                 """
                 SELECT * FROM songs
-                ORDER BY created_at ASC, is_featured ASC
+                ORDER BY status = 'complete' DESC, created_at ASC, is_featured ASC
                 LIMIT ? OFFSET ?
                 """,
                 (safe_limit + 1, safe_offset),
@@ -94,6 +108,8 @@ class SongsDAO:
                     system_message,
                     prompt,
                     soundfont,
+                    model,
+                    status,
                     abc,
                     score,
                     response,
@@ -106,6 +122,8 @@ class SongsDAO:
                     :system_message,
                     :prompt,
                     :soundfont,
+                    :model,
+                    :status,
                     :abc,
                     :score,
                     :response,

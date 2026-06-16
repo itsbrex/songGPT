@@ -1,0 +1,2 @@
+ALTER TABLE songs
+ADD COLUMN model TEXT NOT NULL DEFAULT 'local-cli';

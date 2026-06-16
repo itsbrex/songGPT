@@ -17,6 +17,8 @@ class SongCreateInput(BaseModel):
         description="The initial prompt provided by the user through the app.",
     )
     soundfont: str = "FluidR3_GM.sf2"
+    model: str = "local-cli"
+    status: str = "complete"
 
 
 class SongCreate(SongCreateInput):

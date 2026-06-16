@@ -147,28 +147,8 @@ function Footer() {
       </a>
       <p>
         Made with love by{" "}
-        <a href="https://twitter.com/Tanovski" target="_blank" rel="noreferrer">
-          Jeffry
-        </a>
-        ,{" "}
         <a href="https://twitter.com/_xSoli" target="_blank" rel="noreferrer">
           Soli
-        </a>
-        ,{" "}
-        <a
-          href="https://www.linkedin.com/in/hatem-soliman-12908a1b3/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Tommy
-        </a>{" "}
-        &{" "}
-        <a
-          href="https://www.linkedin.com/in/justin-dorber-370581130/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Justin
         </a>
       </p>
     </footer>
@@ -503,6 +483,8 @@ function SongCard({ song, compact = false }) {
       >
         <pre className="response-text">
           {song.prompt}
+          {"\n\n"}
+          Model: {song.model || "unknown"}
           {"\n\n"}
           {song.response || song.abc || song.error || "No response yet."}
         </pre>
