@@ -1,4 +1,3 @@
-import os
 import tempfile
 from uuid import UUID
 
@@ -16,20 +15,6 @@ from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import FileResponse
 
 router = APIRouter()
-
-
-def resolve_soundfont_path(soundfont: str) -> str:
-    if "/" in soundfont or "\\" in soundfont:
-        raise HTTPException(status_code=400, detail="Invalid soundfont name.")
-    candidates = [
-        f"app/data/soundfonts/{soundfont}",
-        f"/usr/share/sounds/sf2/{soundfont}",
-        "/usr/share/sounds/sf2/FluidR3_GM.sf2",
-    ]
-    for candidate in candidates:
-        if os.path.exists(candidate):
-            return candidate
-    raise HTTPException(status_code=500, detail="No usable soundfont is configured.")
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=SongList)
@@ -65,7 +50,6 @@ async def get_song_file_response(song_id: UUID, file_type: str):
 @router.post("/", status_code=status.HTTP_200_OK)
 async def create_song(payload: SongCreateInput):
     songGPT = SongGPT()
-    soundfont_path = resolve_soundfont_path(payload.soundfont)
     with tempfile.TemporaryDirectory(prefix="songgpt-") as workdir:
         log.info("Generating ABC...")
         response, abc, abc_file_path, score = songGPT.generate_abc(
@@ -75,11 +59,9 @@ async def create_song(payload: SongCreateInput):
         )
         log.info("Generated ABC")
         midi_file_path = songGPT.abc_to_midi(abc_file_path)
-        wav_file_path = songGPT.midi_to_wav(midi_file_path, soundfont_path)
 
         song = SongCreate(**payload.dict(), abc=abc, response=response, score=score)
         song_id = SongsDAO().create(song)
         save_song_file(song_id, abc_file_path, "abc")
         save_song_file(song_id, midi_file_path, "mid")
-        save_song_file(song_id, wav_file_path, "wav")
     return song_id

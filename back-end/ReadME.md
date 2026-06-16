@@ -9,7 +9,8 @@ It uses:
 - local Claude CLI structured output
 - SQLite metadata storage through `SongsDAO`
 - local file storage under `SONGGPT_STORAGE_DIR`
-- `abc2midi` and `fluidsynth` for rendering
+- `abc2midi` for MIDI rendering
+- optional `fluidsynth` tooling for the legacy soundfont inspection endpoints
 
 ## Setup
 
@@ -20,7 +21,8 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
-You also need the local tools:
+You also need `abc2midi`. Install `fluidsynth` and a soundfont package too if
+you want to use the `/soundfonts` inspection endpoints.
 
 ```bash
 sudo apt-get install abcmidi fluidsynth fluid-soundfont-gm

@@ -9,7 +9,6 @@ SONG_FILE_TYPES = {
     "abc": "text/vnd.abc",
     "mid": "audio/midi",
     "midi": "audio/midi",
-    "wav": "audio/wav",
 }
 
 

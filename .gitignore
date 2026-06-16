@@ -3,8 +3,9 @@
 node_modules/
 dist/
 web-build/
-data/
+/data/
 back-end/data/
+back-end/app/data/
 front-end/dist/
 __pycache__/
 .pytest_cache/
