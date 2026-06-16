@@ -218,7 +218,10 @@ function checkRepoInvariants() {
     ["Firebase runtime references", /firebase|firestore|appspot|firebaseapp/i],
     ["provider API-key references", /OPENAI[_-]?API[_-]?KEY|api\.openai\.com|openai\.ChatCompletion/i],
     ["Google Cloud logging references", /google\.cloud|CLOUD_LOGGING/i],
-    ["WAV generation/storage references", /midi_to_wav|audio\/wav|pyFluidSynth|mido==/i],
+    [
+      "WAV generation/storage references",
+      /midi_to_wav|midi_to_audio|audio\/wav|\.wav\b|fluidsynth\.wav|pyFluidSynth|mido==/i,
+    ],
   ];
 
   for (const [label, pattern] of bannedPatterns) {

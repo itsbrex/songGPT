@@ -1,6 +1,4 @@
-import os
 import re
-import shlex
 import subprocess
 from pathlib import Path
 from typing import Dict, List
@@ -45,22 +43,17 @@ async def list_soundfonts():
 )
 async def list_instruments(soundfont: str):
     path = soundfont_path(soundfont)
-    command = f"fluidsynth {path} -a file -n -q"
-    input_str = "inst 1"
-
-    args = shlex.split(command)
-    process = subprocess.Popen(
-        args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True
+    process = subprocess.run(
+        ["fluidsynth", str(path), "-a", "null", "-n", "-q"],
+        input="inst 1\n",
+        capture_output=True,
+        check=True,
+        text=True,
+        timeout=10,
     )
-    output, _ = process.communicate(input=input_str)
-    process.kill()
-    try:
-        os.remove("fluidsynth.wav")
-    except FileNotFoundError:
-        pass
 
     INSTR_REGEX = r"\n?(?P<bank>\d{3})-(?P<num>\d{3}) (?P<instrument>[\w\d\- ]+)\n"
-    matches = [m.groupdict() for m in re.finditer(INSTR_REGEX, output)]
+    matches = [m.groupdict() for m in re.finditer(INSTR_REGEX, process.stdout)]
     return [
         {
             "name": m["instrument"],
