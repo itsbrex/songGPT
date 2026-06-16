@@ -31,13 +31,30 @@ python3 composer/songgpt_composer.py --check
 
 ## Continuous Worker
 
-Copy `composer/songgpt-composer.env.example` to an ignored env file and set the
-real `COMPOSER_TOKEN`. The example systemd unit assumes the repo is checked out
-at `/opt/songgpt`:
+The easiest install path is the user-level systemd helper. It writes no
+secrets; if the env file is missing, it creates one from
+`composer/songgpt-composer.env.example` with `COMPOSER_TOKEN` left blank.
+
+```bash
+scripts/install-composer-service.sh
+$EDITOR ~/.config/songgpt/songgpt-composer.env
+systemctl --user enable --now songgpt-composer.service
+journalctl --user -u songgpt-composer.service -f
+```
+
+On a headless VPS, add `--enable-linger` so the user service keeps running after
+logout:
+
+```bash
+scripts/install-composer-service.sh --enable-linger --start
+```
+
+The older `composer/songgpt-composer.service.example` remains available for
+system-level installs that intentionally use `/opt/songgpt`.
 
 ```bash
 sudo cp composer/songgpt-composer.service.example /etc/systemd/system/songgpt-composer.service
 sudo systemctl daemon-reload
-sudo systemctl enable --now songgpt-composer
-sudo journalctl -u songgpt-composer -f
+sudo systemctl enable --now songgpt-composer.service
+sudo journalctl -u songgpt-composer.service -f
 ```

@@ -137,8 +137,13 @@ python3 composer/songgpt_composer.py
 ```
 
 For continuous operation on a local machine or VPS, use
-`composer/songgpt-composer.service.example` and keep the real
-`COMPOSER_TOKEN` in an ignored env file.
+`scripts/install-composer-service.sh` and keep the real `COMPOSER_TOKEN` in the
+ignored env file it creates at `~/.config/songgpt/songgpt-composer.env`.
+
+```bash
+scripts/install-composer-service.sh --enable-linger --start
+journalctl --user -u songgpt-composer.service -f
+```
 
 ## Contributing
 

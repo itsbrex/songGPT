@@ -75,6 +75,11 @@ function assertTrackedAndNotIgnored(path) {
   assert(gitStatus(["check-ignore", "-q", path]) !== 0, `${path} is not ignored`);
 }
 
+function assertExecutable(path) {
+  const mode = statSync(join(root, path)).mode;
+  assert(Boolean(mode & 0o111), `${path} is executable`);
+}
+
 async function fetchJson(url) {
   const response = await fetch(url);
   assert(response.ok, `${url} returned ${response.status}`);
@@ -179,6 +184,15 @@ function checkRepoInvariants() {
 
   assertTrackedAndNotIgnored("front-end/src/data/defaultSystemMessage.js");
   assertTrackedAndNotIgnored("front-end/src/data/instruments.js");
+  assertTrackedAndNotIgnored("scripts/install-composer-service.sh");
+  assertExecutable("scripts/install-composer-service.sh");
+  assert(
+    spawnSync("bash", ["-n", "scripts/install-composer-service.sh"], {
+      cwd: root,
+      stdio: "ignore",
+    }).status === 0,
+    "composer service installer has valid shell syntax",
+  );
 
   const activeFiles = [
     "front-end/src",
