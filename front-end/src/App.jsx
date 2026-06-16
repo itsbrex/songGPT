@@ -5,11 +5,15 @@ import { HexColorPicker } from "react-colorful";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  CircleAlert,
+  CheckCircle2,
   Download,
   ExternalLink,
   Github,
   Info,
+  LoaderCircle,
   MessageCircle,
+  Music2,
   Palette,
   Settings,
   X,
@@ -56,8 +60,72 @@ const defaultInstruments = [
   { name: "Flute", channel: 73 },
 ];
 
+const generationSteps = ["Queued", "Composing", "Rendering", "Ready"];
+
 const hashIndex = (value = "") =>
   [...value].reduce((total, char) => total + char.charCodeAt(0), 0) % palette.length;
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+const secondsSince = (date, now) => {
+  const time = date ? new Date(date).getTime() : now;
+  if (Number.isNaN(time)) return 0;
+  return Math.max(0, Math.round((now - time) / 1000));
+};
+
+function useNow(active) {
+  const [now, setNow] = React.useState(() => Date.now());
+
+  React.useEffect(() => {
+    if (!active) return undefined;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [active]);
+
+  return now;
+}
+
+function progressForSong(song, now) {
+  if (song.status === "failed") {
+    return {
+      title: "Generation stopped",
+      subtitle: song.error || "The composer could not finish this one.",
+      percent: 100,
+      activeStep: -1,
+      failed: true,
+      meta: "Open the response bubble for details.",
+    };
+  }
+
+  if (song.status === "processing") {
+    const elapsed = secondsSince(
+      song.processing_started_at || song.updated_at || song.created_at,
+      now,
+    );
+    const percent = Math.round(clamp(42 + elapsed * 0.7, 42, 92));
+    const rendering = elapsed > 35;
+    return {
+      title: rendering ? "Rendering MIDI" : "Composing your song",
+      subtitle: rendering
+        ? "ABC is being checked and turned into a MIDI file."
+        : "The local CLI composer is writing ABC notation.",
+      percent,
+      activeStep: rendering ? 2 : 1,
+      failed: false,
+      meta: `${elapsed}s elapsed. This usually finishes in under a minute.`,
+    };
+  }
+
+  const elapsed = secondsSince(song.created_at, now);
+  return {
+    title: "Waiting for composer",
+    subtitle: "Your prompt is queued and the local composer will claim it shortly.",
+    percent: Math.round(clamp(12 + elapsed * 0.55, 12, 38)),
+    activeStep: 0,
+    failed: false,
+    meta: `${elapsed}s in queue. The daemon polls every few seconds.`,
+  };
+}
 
 const getComplementaryColor = (hexColor) => {
   const color = hexColor.replace("#", "");
@@ -293,10 +361,13 @@ function SongCreate({ initialSystemMessage = defaultSystemMessage }) {
         disabled={!prompt || mutation.isPending}
         onClick={() => mutation.mutate({ prompt, system_message: systemMessage })}
       >
-        {mutation.isPending ? "Generating..." : "Generate"}
+        {mutation.isPending ? "Queueing..." : "Generate"}
       </button>
       {mutation.isPending ? (
-        <p className="loading-note">This normally takes less than 60 seconds</p>
+        <div className="submit-progress" role="status">
+          <span />
+          <p>Creating a composer job...</p>
+        </div>
       ) : null}
       {mutation.error ? <p className="error-note">{mutation.error.message}</p> : null}
     </section>
@@ -471,7 +542,7 @@ function SongCard({ song, compact = false }) {
           <MessageCircle size={22} />
         </button>
       </div>
-      {song.status !== "complete" ? <SongStatus song={song} /> : null}
+      {song.status !== "complete" ? <SongStatus song={song} compact={compact} /> : null}
       {abc && song.status === "complete" ? (
         <ABCAudioPlayer abc={abc} color={foreground} compact={compact} />
       ) : null}
@@ -492,18 +563,56 @@ function SongCard({ song, compact = false }) {
   );
 }
 
-function SongStatus({ song }) {
-  const label =
-    song.status === "queued"
-      ? "Queued for the composer"
-      : song.status === "processing"
-        ? "The composer is writing this one"
-        : song.status === "failed"
-          ? song.error || "Generation failed"
-          : "Waiting for audio";
+function SongStatus({ song, compact = false }) {
+  const now = useNow(song.status === "queued" || song.status === "processing");
+  const progress = progressForSong(song, now);
+  const StatusIcon = progress.failed
+    ? CircleAlert
+    : song.status === "processing"
+      ? LoaderCircle
+      : Music2;
+
   return (
-    <div className="song-status">
-      <span>{label}</span>
+    <div className={`song-status generation-progress ${progress.failed ? "failed" : ""}`}>
+      <div className="progress-header">
+        <span className="progress-icon" aria-hidden="true">
+          <StatusIcon
+            className={song.status === "processing" ? "spinning" : ""}
+            size={compact ? 18 : 22}
+          />
+        </span>
+        <div className="progress-copy">
+          <strong>{progress.title}</strong>
+          <span>{progress.subtitle}</span>
+        </div>
+        <span className="progress-percent">{progress.percent}%</span>
+      </div>
+      <div
+        className="progress-track"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress.percent}
+        aria-label={progress.title}
+      >
+        <span style={{ width: `${progress.percent}%` }} />
+      </div>
+      <ol className="progress-steps">
+        {generationSteps.map((step, index) => {
+          const done = !progress.failed && index < progress.activeStep;
+          const active = !progress.failed && index === progress.activeStep;
+          return (
+            <li
+              key={step}
+              className={`${done ? "done" : ""} ${active ? "active" : ""}`}
+            >
+              <span>{done ? <CheckCircle2 size={12} /> : null}</span>
+              {step}
+            </li>
+          );
+        })}
+      </ol>
+      <p className="progress-meta">{progress.meta}</p>
     </div>
   );
 }
@@ -556,8 +665,12 @@ function ABCAudioPlayer({ abc, color = "#ffffff", compact = false }) {
         color !== "#ffffff" ? "inverse" : ""
       }`}
     >
-      <div ref={notationRef} className="abcjs-container" style={{ color }} />
-      <div ref={audioRef} className="abcjs-audio" style={{ color }} />
+      <div className="abcjs-scroll">
+        <div ref={notationRef} className="abcjs-container" style={{ color }} />
+      </div>
+      <div className="abcjs-audio-shell">
+        <div ref={audioRef} className="abcjs-audio" style={{ color }} />
+      </div>
     </div>
   );
 }
