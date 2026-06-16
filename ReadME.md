@@ -107,6 +107,19 @@ The check verifies the live app/API URLs, the clean `api.songgpt.soli.blue`
 surface, tracked frontend source data, Cloudflare D1/R2 bindings, and active
 runtime files for Firebase/provider/WAV regressions.
 
+## Backups
+
+D1 is the source of truth now that Firebase is retired. Export it before risky
+schema or migration work:
+
+```bash
+scripts/export-d1-backup.sh
+```
+
+The script writes an ignored SQL dump and metadata files under `backups/`. It
+uses `ENV_FILE=...`, `OUTPUT_DIR=...`, and `DATABASE_NAME=...` overrides when
+needed, and it never commits the generated dump.
+
 ## Composer Worker
 
 ```bash

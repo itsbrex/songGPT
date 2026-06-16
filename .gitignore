@@ -4,6 +4,7 @@ node_modules/
 dist/
 web-build/
 /data/
+backups/
 back-end/data/
 back-end/app/data/
 front-end/dist/
