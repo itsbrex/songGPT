@@ -274,7 +274,7 @@ function SongCreate({ initialSystemMessage = defaultSystemMessage }) {
         <textarea
           value={prompt}
           maxLength={1000}
-          rows={4}
+          rows={1}
           placeholder={placeholder}
           onChange={(event) => setPrompt(event.target.value)}
           aria-label="Song prompt"

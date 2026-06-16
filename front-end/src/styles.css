@@ -9,7 +9,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   --blue: #316dca;
-  --blue-dark: #1982fc;
+  --blue-dark: #2d7de8;
   --gray-50: #f8f9fa;
   --gray-100: #eef2f7;
   --gray-500: #6b7280;
@@ -292,7 +292,7 @@ a {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: 22px;
   padding: 0 20px;
 }
 
@@ -303,42 +303,46 @@ a {
 }
 
 .prompt-shell {
-  width: min(90%, 920px);
-  min-height: 122px;
+  width: min(720px, calc(100vw - 40px));
+  min-height: 64px;
   display: grid;
-  grid-template-columns: 42px 1fr 46px;
-  align-items: stretch;
-  border: 1px solid transparent;
-  border-radius: 24px;
+  grid-template-columns: 46px 1fr 46px;
+  align-items: center;
+  border: 1px solid #e8edf4;
+  border-radius: 18px;
   background: #ffffff;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
   transition: box-shadow 160ms ease, border-color 160ms ease;
 }
 
 .prompt-shell:hover {
-  box-shadow: var(--shadow-md);
+  border-color: #dde5ef;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
 }
 
 .prompt-shell:focus-within {
-  border-color: var(--gray-100);
-  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.12);
+  border-color: #cbd7e6;
+  box-shadow: 0 4px 14px rgba(49, 109, 202, 0.1);
 }
 
 .prompt-shell textarea {
   width: 100%;
-  min-height: 120px;
-  resize: vertical;
+  height: 42px;
+  min-height: 42px;
+  max-height: 42px;
+  resize: none;
   border: 0;
   outline: 0;
-  padding: 22px 4px;
+  padding: 9px 4px;
   color: #111827;
   background: transparent;
-  font-size: 18px;
-  line-height: 1.45;
+  font-size: 17px;
+  line-height: 1.4;
+  overflow: hidden;
 }
 
 .prompt-shell textarea::placeholder {
-  color: #9ca3af;
+  color: #98a1af;
 }
 
 .prompt-icon,
@@ -351,14 +355,14 @@ a {
   place-items: center;
   border: 0;
   border-radius: 999px;
-  color: #9ca3af;
+  color: #98a1af;
   background: transparent;
   cursor: pointer;
 }
 
 .palette-button {
-  color: #111827;
-  background: linear-gradient(90deg, var(--blue-dark), var(--blue));
+  color: #ffffff;
+  background: var(--blue);
 }
 
 .hint {
