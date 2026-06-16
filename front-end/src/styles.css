@@ -665,6 +665,21 @@ a {
   stroke: #cccccc;
 }
 
+.abcjs-inline-audio .abcjs-midi-start .abcjs-pause-svg,
+.abcjs-inline-audio .abcjs-midi-start .abcjs-loading-svg {
+  display: none;
+}
+
+.abcjs-inline-audio .abcjs-midi-start.abcjs-pushed .abcjs-play-svg,
+.abcjs-inline-audio .abcjs-midi-start.abcjs-loading .abcjs-play-svg {
+  display: none;
+}
+
+.abcjs-inline-audio .abcjs-midi-start.abcjs-pushed .abcjs-pause-svg,
+.abcjs-inline-audio .abcjs-midi-start.abcjs-loading .abcjs-loading-svg {
+  display: block;
+}
+
 .abcjs-inline-audio .abcjs-midi-progress-background {
   background-color: #424242;
   height: 10px;
