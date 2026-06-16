@@ -14,9 +14,13 @@ const legacyProofSongId =
   process.env.SONGGPT_LEGACY_PROOF_SONG_ID ||
   process.env.SONGGPT_PROOF_SONG_ID ||
   "661874d5-52fc-4cd9-8da4-df4a6b0bf68f";
-const composerProofSongId =
+const codexProofSongId =
+  process.env.SONGGPT_CODEX_PROOF_SONG_ID ||
   process.env.SONGGPT_COMPOSER_PROOF_SONG_ID ||
   "d608ac87-ca27-4ee7-86b7-0aee379cdb1d";
+const claudeProofSongId =
+  process.env.SONGGPT_CLAUDE_PROOF_SONG_ID ||
+  "6c640edd-8e2d-446a-bcfe-2ab2f2ce06c8";
 
 const failures = [];
 const passes = [];
@@ -93,6 +97,22 @@ async function checkFile(url, expectedContentType, method = "GET") {
   }
 }
 
+async function checkComposerProof(songId, generator) {
+  const song = await fetchJson(`${apiBase}/songs/${songId}`);
+  assert(song.status === "complete", `${generator} proof song is complete`);
+  assert(
+    new RegExp(generator, "i").test(song.model || "") &&
+      /local-cli/i.test(song.model || ""),
+    `${generator} proof song exposes a local CLI model`,
+  );
+  assert(Boolean(song.abc), `${generator} proof song has ABC notation in D1`);
+  assert(Boolean(song.response), `${generator} proof song has composer response text`);
+  await checkFile(`${apiBase}/songs/${songId}/files/abc`, "text/vnd.abc");
+  await checkFile(`${apiBase}/songs/${songId}/files/abc`, "text/vnd.abc", "HEAD");
+  await checkFile(`${apiBase}/songs/${songId}/files/mid`, "audio/midi");
+  await checkFile(`${apiBase}/songs/${songId}/files/mid`, "audio/midi", "HEAD");
+}
+
 async function checkLiveUrls() {
   const rootResponse = await fetchJson(`${apiBase}/`);
   assert(rootResponse.ok === true, "API hostname root returns health payload");
@@ -106,23 +126,12 @@ async function checkLiveUrls() {
   const legacySongs = await fetchJson(`${apiBase}/api/songs/?limit=1`);
   assert(Array.isArray(legacySongs.songs), "compatibility /api/songs still works");
 
-  const composerSong = await fetchJson(`${apiBase}/songs/${composerProofSongId}`);
-  assert(composerSong.status === "complete", "local CLI proof song is complete");
-  assert(
-    /local-cli|codex|claude/i.test(composerSong.model || ""),
-    "local CLI proof song exposes a local model",
-  );
-  assert(Boolean(composerSong.abc), "local CLI proof song has ABC notation in D1");
-  assert(Boolean(composerSong.response), "local CLI proof song has composer response text");
-
   await checkFile(`${apiBase}/songs/${legacyProofSongId}/files/abc`, "text/vnd.abc");
   await checkFile(`${apiBase}/songs/${legacyProofSongId}/files/abc`, "text/vnd.abc", "HEAD");
   await checkFile(`${apiBase}/songs/${legacyProofSongId}/files/mid`, "audio/midi");
   await checkFile(`${apiBase}/songs/${legacyProofSongId}/files/mid`, "audio/midi", "HEAD");
-  await checkFile(`${apiBase}/songs/${composerProofSongId}/files/abc`, "text/vnd.abc");
-  await checkFile(`${apiBase}/songs/${composerProofSongId}/files/abc`, "text/vnd.abc", "HEAD");
-  await checkFile(`${apiBase}/songs/${composerProofSongId}/files/mid`, "audio/midi");
-  await checkFile(`${apiBase}/songs/${composerProofSongId}/files/mid`, "audio/midi", "HEAD");
+  await checkComposerProof(codexProofSongId, "codex");
+  await checkComposerProof(claudeProofSongId, "claude");
 
   const appResponse = await fetch(appUrl);
   assert(appResponse.ok, `${appUrl} returned ${appResponse.status}`);
