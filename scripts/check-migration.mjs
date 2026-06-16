@@ -191,6 +191,12 @@ function checkRepoInvariants() {
       !composer.includes('"https://api.songgpt.soli.blue/api"'),
     "composer defaults to the API hostname root",
   );
+  assert(
+    composer.includes('"--safe-mode"') &&
+      composer.includes('"--tools"') &&
+      !composer.includes('"dontAsk"'),
+    "Claude composer runs without bypass permissions or tools",
+  );
 
   assertTrackedAndNotIgnored("front-end/src/data/defaultSystemMessage.js");
   assertTrackedAndNotIgnored("front-end/src/data/instruments.js");

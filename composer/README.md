@@ -17,6 +17,10 @@ export CLAUDE_MODEL="sonnet"
 python3 composer/songgpt_composer.py
 ```
 
+Claude generation runs with safe mode enabled and `--tools ""`, so Claude can
+only return text. It does not get file, shell, or edit tools; the composer
+process handles ABC/MIDI rendering and uploads itself.
+
 For a single smoke-test job:
 
 ```bash

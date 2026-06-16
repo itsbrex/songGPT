@@ -131,8 +131,9 @@ def generate_with_claude(song):
         "--json-schema",
         json.dumps(OUTPUT_SCHEMA),
         "--no-session-persistence",
-        "--permission-mode",
-        "dontAsk",
+        "--safe-mode",
+        "--tools",
+        "",
     ]
     try:
         completed = subprocess.run(

@@ -148,6 +148,11 @@ export CLAUDE_MODEL="sonnet"
 python3 composer/songgpt_composer.py
 ```
 
+When `SONGGPT_GENERATOR=claude`, the composer runs Claude in non-interactive
+print mode with safe mode enabled and all Claude tools disabled. SongGPT only
+needs text generation here; local rendering and uploads are handled by the
+composer process.
+
 For continuous operation on a local machine or VPS, use
 `scripts/install-composer-service.sh` and keep the real `COMPOSER_TOKEN` in the
 ignored env file it creates at `~/.config/songgpt/songgpt-composer.env`.
