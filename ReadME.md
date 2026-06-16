@@ -92,6 +92,19 @@ The app hostname uses Pages Functions at `/api/...`; middleware rewrites only
 the API hostname, so `https://api.songgpt.soli.blue/songs/` maps to the same API
 without requiring callers to include `/api`.
 
+## Migration Health Check
+
+Run this from the repo root after deploys or before declaring Firebase fully
+retired:
+
+```bash
+node scripts/check-migration.mjs
+```
+
+The check verifies the live app/API URLs, the clean `api.songgpt.soli.blue`
+surface, tracked frontend source data, Cloudflare D1/R2 bindings, and active
+runtime files for Firebase/provider/WAV regressions.
+
 ## Composer Worker
 
 ```bash

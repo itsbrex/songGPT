@@ -1,0 +1,181 @@
+#!/usr/bin/env node
+import { spawnSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const appUrl = process.env.SONGGPT_APP_URL || "https://songgpt.soli.blue/songs/";
+const apiBase = (process.env.SONGGPT_API_BASE || "https://api.songgpt.soli.blue").replace(
+  /\/$/,
+  "",
+);
+
+const failures = [];
+const passes = [];
+
+function pass(message) {
+  passes.push(message);
+}
+
+function assert(condition, message) {
+  if (condition) {
+    pass(message);
+  } else {
+    failures.push(message);
+  }
+}
+
+function read(path) {
+  return readFileSync(join(root, path), "utf8");
+}
+
+function listFiles(start) {
+  const absolute = join(root, start);
+  if (!existsSync(absolute)) return [];
+
+  const files = [];
+  const stack = [absolute];
+  while (stack.length) {
+    const current = stack.pop();
+    const stat = statSync(current);
+    if (stat.isDirectory()) {
+      if (
+        current.includes("node_modules") ||
+        current.includes("dist") ||
+        current.includes("__pycache__")
+      ) {
+        continue;
+      }
+      for (const entry of readdirSync(current)) stack.push(join(current, entry));
+    } else if (!current.endsWith(".pyc")) {
+      files.push(current);
+    }
+  }
+  return files;
+}
+
+function gitStatus(args) {
+  return spawnSync("git", args, { cwd: root, stdio: "ignore" }).status;
+}
+
+function assertTrackedAndNotIgnored(path) {
+  assert(gitStatus(["ls-files", "--error-unmatch", path]) === 0, `${path} is tracked`);
+  assert(gitStatus(["check-ignore", "-q", path]) !== 0, `${path} is not ignored`);
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url);
+  assert(response.ok, `${url} returned ${response.status}`);
+  const contentType = response.headers.get("content-type") || "";
+  assert(contentType.includes("application/json"), `${url} returned JSON`);
+  return response.json();
+}
+
+async function checkLiveUrls() {
+  const rootResponse = await fetchJson(`${apiBase}/`);
+  assert(rootResponse.ok === true, "API hostname root returns health payload");
+  assert(rootResponse.endpoints?.includes("/songs/"), "API root advertises /songs/");
+
+  const cleanSongs = await fetchJson(`${apiBase}/songs/?limit=1`);
+  assert(Array.isArray(cleanSongs.songs), "API hostname /songs returns a songs array");
+  assert(cleanSongs.songs.length > 0, "API hostname /songs returns migrated data");
+  assert(Boolean(cleanSongs.songs[0]?.model), "song rows expose a model field");
+
+  const legacySongs = await fetchJson(`${apiBase}/api/songs/?limit=1`);
+  assert(Array.isArray(legacySongs.songs), "compatibility /api/songs still works");
+
+  const appResponse = await fetch(appUrl);
+  assert(appResponse.ok, `${appUrl} returned ${appResponse.status}`);
+  const html = await appResponse.text();
+  assert(html.includes("SongGPT") && html.includes('id="root"'), "app URL returns Vite HTML");
+}
+
+function checkRepoInvariants() {
+  const packageJson = JSON.parse(read("front-end/package.json"));
+  const dependencies = {
+    ...packageJson.dependencies,
+    ...packageJson.devDependencies,
+  };
+  const dependencyNames = Object.keys(dependencies);
+  assert(
+    !dependencyNames.some((name) => /firebase|openai|@google-cloud/i.test(name)),
+    "frontend dependencies do not include Firebase, OpenAI, or Google Cloud SDKs",
+  );
+
+  const requirements = read("back-end/requirements.txt");
+  assert(
+    !/firebase|openai|google-cloud|pyFluidSynth|mido==/i.test(requirements),
+    "fallback backend requirements stay provider-free and WAV-free",
+  );
+
+  const wrangler = JSON.parse(read("front-end/wrangler.jsonc"));
+  assert(wrangler.name === "songgpt", "Wrangler project is songgpt");
+  assert(
+    wrangler.d1_databases?.some((db) => db.binding === "DB" && db.database_name === "songgpt"),
+    "Wrangler config binds D1 as DB",
+  );
+  assert(
+    wrangler.r2_buckets?.some(
+      (bucket) => bucket.binding === "SONG_FILES" && bucket.bucket_name === "songgpt-files",
+    ),
+    "Wrangler config binds R2 songgpt-files as SONG_FILES",
+  );
+
+  const composer = read("composer/songgpt_composer.py");
+  assert(
+    composer.includes('"https://api.songgpt.soli.blue"') &&
+      !composer.includes('"https://api.songgpt.soli.blue/api"'),
+    "composer defaults to the API hostname root",
+  );
+
+  assertTrackedAndNotIgnored("front-end/src/data/defaultSystemMessage.js");
+  assertTrackedAndNotIgnored("front-end/src/data/instruments.js");
+
+  const activeFiles = [
+    "front-end/src",
+    "front-end/functions",
+    "front-end/package.json",
+    "front-end/package-lock.json",
+    "front-end/wrangler.jsonc",
+    "composer",
+    "back-end/app",
+    "back-end/requirements.txt",
+  ].flatMap(listFiles);
+
+  const bannedPatterns = [
+    ["Firebase runtime references", /firebase|firestore|appspot|firebaseapp/i],
+    ["provider API-key references", /OPENAI[_-]?API[_-]?KEY|api\.openai\.com|openai\.ChatCompletion/i],
+    ["Google Cloud logging references", /google\.cloud|CLOUD_LOGGING/i],
+    ["WAV generation/storage references", /midi_to_wav|audio\/wav|pyFluidSynth|mido==/i],
+  ];
+
+  for (const [label, pattern] of bannedPatterns) {
+    const offenders = activeFiles
+      .map((file) => [file, readFileSync(file, "utf8")])
+      .filter(([, contents]) => pattern.test(contents))
+      .map(([file]) => relative(root, file));
+    assert(offenders.length === 0, `${label} absent from active runtime files`);
+    if (offenders.length) {
+      failures.push(`  ${label}: ${offenders.join(", ")}`);
+    }
+  }
+}
+
+async function main() {
+  checkRepoInvariants();
+  await checkLiveUrls();
+
+  for (const message of passes) console.log(`ok - ${message}`);
+  if (failures.length) {
+    for (const message of failures) console.error(`not ok - ${message}`);
+    process.exit(1);
+  }
+}
+
+try {
+  await main();
+} catch (error) {
+  console.error(error);
+  process.exit(1);
+}

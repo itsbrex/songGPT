@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "deploy": "npm run build && npx wrangler@latest pages deploy dist --project-name=songgpt --branch=main --commit-dirty=true",
+    "check:migration": "node ../scripts/check-migration.mjs",
     "d1:migrate:local": "npx wrangler@latest d1 migrations apply songgpt --local",
     "d1:migrate:remote": "npx wrangler@latest d1 migrations apply songgpt --remote"
   },
