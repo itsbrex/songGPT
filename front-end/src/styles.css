@@ -165,7 +165,9 @@ a {
 .detail-skeleton {
   width: min(400px, calc(100vw - 32px));
   min-width: min(400px, calc(100vw - 32px));
-  min-height: 235px;
+  height: 285px;
+  min-height: 285px;
+  max-height: 285px;
   margin: 12px;
   padding: 20px;
   border-radius: 6px;
@@ -176,25 +178,20 @@ a {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 18px;
+  gap: 8px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .song-card.compact {
   flex: 0 0 min(400px, calc(100vw - 48px));
   width: min(400px, calc(100vw - 48px));
   min-width: min(400px, calc(100vw - 48px));
-  height: 285px;
-  min-height: 285px;
-  max-height: 285px;
   justify-content: flex-start;
-  gap: 8px;
-  overflow: hidden;
 }
 
 .song-card:not(.compact) {
-  width: min(430px, calc(100vw - 30px));
-  min-height: 410px;
+  flex: 0 0 min(400px, calc(100vw - 32px));
 }
 
 .song-skeleton,
@@ -209,7 +206,7 @@ a {
   align-items: center;
   justify-content: center;
   gap: 20px;
-  min-height: 36px;
+  min-height: 30px;
 }
 
 .song-card.compact .song-actions {
@@ -218,8 +215,8 @@ a {
 }
 
 .song-icon {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 30px;
   display: inline-grid;
   place-items: center;
   border: 0;
@@ -231,6 +228,21 @@ a {
 .song-card.compact .song-icon {
   width: 34px;
   height: 30px;
+}
+
+.generation-panel {
+  width: min(400px, calc(100vw - 32px));
+  margin: 12px;
+  padding: 0;
+  color: #111827;
+}
+
+.song-rail .generation-panel {
+  flex: 0 0 min(400px, calc(100vw - 48px));
+}
+
+.detail-card-wrap .generation-panel {
+  margin-inline: auto;
 }
 
 .download-wrap {
@@ -852,7 +864,7 @@ a {
   margin-right: 2px;
   padding: 7px 4px;
   background: none !important;
-  border: 1px solid transparent;
+  border: 0 !important;
   box-sizing: border-box;
   line-height: 1;
 }

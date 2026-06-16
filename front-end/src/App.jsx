@@ -257,6 +257,8 @@ function SongDetailScreen() {
       return status === "queued" || status === "processing" ? 3500 : false;
     },
   });
+  const isGenerating =
+    song.data?.status === "queued" || song.data?.status === "processing";
 
   return (
     <main className="screen detail-screen">
@@ -264,12 +266,14 @@ function SongDetailScreen() {
         {song.isLoading ? <div className="detail-skeleton" /> : null}
         {song.data ? <SongCard song={song.data} /> : null}
       </section>
-      <section className="detail-compose">
-        <SongCreate initialSystemMessage={song.data?.system_message || defaultSystemMessage} />
-        <Link className="examples-link" to="/songs/">
-          See Examples
-        </Link>
-      </section>
+      {!isGenerating ? (
+        <section className="detail-compose">
+          <SongCreate initialSystemMessage={song.data?.system_message || defaultSystemMessage} />
+          <Link className="examples-link" to="/songs/">
+            See Examples
+          </Link>
+        </section>
+      ) : null}
     </main>
   );
 }
@@ -506,6 +510,14 @@ function SongCard({ song, compact = false }) {
   const foreground = getComplementaryColor(background);
   const abc = song?.abc?.replace(/(%%MIDI program)\s+\d+\s+(\d+)/g, "$1 $2");
 
+  if (song.status !== "complete") {
+    return (
+      <section className="generation-panel" aria-label="Song generation progress">
+        <SongStatus song={song} compact={compact} />
+      </section>
+    );
+  }
+
   return (
     <article
       className={`song-card ${compact ? "compact" : ""}`}
@@ -542,10 +554,7 @@ function SongCard({ song, compact = false }) {
           <MessageCircle size={22} />
         </button>
       </div>
-      {song.status !== "complete" ? <SongStatus song={song} compact={compact} /> : null}
-      {abc && song.status === "complete" ? (
-        <ABCAudioPlayer abc={abc} color={foreground} compact={compact} />
-      ) : null}
+      {abc ? <ABCAudioPlayer abc={abc} color={foreground} compact /> : null}
       <Modal
         open={responseOpen}
         onClose={() => setResponseOpen(false)}
